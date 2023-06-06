@@ -1,6 +1,10 @@
+import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 import cv2
+import numpy as np
 
 names = ['apple-1', 'children-1', 'cup-1', 'device3-1', 'device4-1', 'Heart-1', 'personal_car-1', 'ray-1', 'sea_snake-1', 'turtle-1']
+images = []
 
 def mostrar_menu(opciones):
     print('Seleccione una opción:')
@@ -30,7 +34,7 @@ def generar_menu(opciones, opcion_salida):
 def menu_principal():
     opciones = {
         '1': ('Opción 1', accion1),
-        '2': ('Mostrar imágenes', accion2),
+        '2': ('Mostrar imágenes', showImages),
         '3': ('Opción 3', accion3),
         '4': ('Salir', salir)
     }
@@ -42,13 +46,14 @@ def accion1():
     print('Has elegido la opción 1')
 
 
-def accion2():
-    for name in names:
-        fullName = 'images/' + name + '.png'
-        image = cv2.imread(fullName) 
-        cv2.imshow(name,image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+def showImages():
+    fig,axs = plt.subplots(2,5,figsize=(6,4))
+    for i,img in enumerate(images):
+        row = i//5
+        col = i%5
+        axs[row,col].imshow(img,cmap = "Greys_r")
+        axs[row,col].axis("off")
+    plt.show()
 
 
 def accion3():
@@ -60,4 +65,8 @@ def salir():
 
 
 if __name__ == '__main__':
+    for name in names:
+        fullName = 'images/' + name + '.png'
+        img = np.array(cv2.imread(fullName, cv2.IMREAD_GRAYSCALE))/255
+        images.append(img.astype(int))
     menu_principal()
