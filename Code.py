@@ -2,44 +2,159 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
+import pyvista as pv
 
-names = ['cup-1', 'device2-1', 'device3-1', 'device4-1', 'device8-1', 'device9-1', 'flatfish-1', 'jar-1', 'personal_car-1', 'ray-1']
+names = ['cup-1', 'device8-1', 'flatfish-1', 'jar-1', 'personal_car-1']
 images = []
-
-def mostrar_menu(opciones):
-    print('Seleccione una opción:')
-    for clave in sorted(opciones):
-        print(f' {clave}) {opciones[clave][0]}')
-
-
-def leer_opcion(opciones):
-    while (a := input('Opción: ')) not in opciones:
-        print('Opción incorrecta, vuelva a intentarlo.')
-    return a
-
-
-def ejecutar_opcion(opcion, opciones):
-    opciones[opcion][1]()
-
-
-def generar_menu(opciones, opcion_salida):
-    opcion = None
-    while opcion != opcion_salida:
-        mostrar_menu(opciones)
-        opcion = leer_opcion(opciones)
-        ejecutar_opcion(opcion, opciones)
-        print()
-
+models_3d = ['cow', 'elephant', 'hippo', 'pear', 'torus']
+chainCodeNames = ['F8', 'F4', 'AF8', '3OT', 'VCC']
 
 def menu_principal():
-    opciones = {
-        '1': ('Funciones', chainCodes),
-        '2': ('Mostrar imágenes', showImages),
-        '3': ('Opción 3', accion3),
-        '4': ('Salir', salir)
-    }
+    while True:
+        print("\n=== MENÚ PRINCIPAL ===")
+        print("1. Funciones")
+        print("2. Abrir imágenes")
+        print("3. Guardar")
+        print("0. Salir")
+        
+        opcion = input("Selecciona una opción: ")
+        
+        if opcion == "1":
+            sub_menu1()
+        elif opcion == "2":
+            sub_menu2()
+        elif opcion == "3":
+            guardar()
+        elif opcion == "0":
+            break
+        else:
+            print("Opción no válida. Por favor, selecciona una opción válida.")
 
-    generar_menu(opciones, '4')
+
+def sub_menu1():
+    while True:
+        print("\n=== Funciones ===")
+        print("1. Códigos de cadena")
+        print("2. Graficar cadenas")
+        print("3. Nubes de puntos")
+        print("4. Euler")
+        print("0. Regresar")
+        
+        opcion = input("Selecciona una opción: ")
+        
+        if opcion == "1":
+            codes = chainCodes()
+            sub_menu1_1(codes)
+        elif opcion == "2":
+            sub_menu1_2()
+        elif opcion == "0":
+            break
+        else:
+            print("Opción no válida. Por favor, selecciona una opción válida.")
+
+def sub_menu1_1(codes):
+    while True:
+        print("\n=== Códigos de cadena ===")
+        print("1. F8")
+        print("2. F4")
+        print("3. AF8")
+        print("4. 3OT")
+        print("5. VCC")
+        print("0. Regresar")
+        
+        opcion = input("Selecciona una opción: ")
+        
+        if opcion == "1":
+            print('\n--',chainCodeNames[0],'--')
+            for j in range(len(codes[0])):
+                print(names[j],': ',codes[0][j])
+            F8_3D()
+        elif opcion == "2":
+            print('\n--',chainCodeNames[1],'--')
+            for j in range(len(codes[1])):
+                print(names[j],': ',codes[1][j])
+            F4_3D()
+        elif opcion == "3":
+            print('\n--',chainCodeNames[2],'--')
+            for j in range(len(codes[2])):
+                print(names[j],': ',codes[2][j])            
+            VCC_3D()
+        elif opcion == "4":
+            print('\n--',chainCodeNames[3],'--')
+            for j in range(len(codes[3])):
+                print(names[j],': ',codes[3][j])
+            OT3_3D()
+        elif opcion == "5":
+            print('\n--',chainCodeNames[4],'--')
+            for j in range(len(codes[4])):
+                print(names[j],': ',codes[4][j])
+            AF8_3D()
+        elif opcion == "0":
+            break
+        else:
+            print("Opción no válida. Por favor, selecciona una opción válida.")
+
+def sub_menu1_2():
+    while True:
+        print("\n=== Graficar cadenas ===")
+        print("1. 2D")
+        print("2. 3D")
+        print("0. Regresar")
+        
+        opcion = input("Selecciona una opción: ")
+        
+        if opcion == "1":
+            graficar_2d()
+        elif opcion == "2":
+            graficar_3d()
+        elif opcion == "0":
+            break
+        else:
+            print("Opción no válida. Por favor, selecciona una opción válida.")
+
+def sub_menu2():
+    while True:
+        print("\n=== Abrir imágenes ===")
+        print("1. 2D")
+        print("2. 3D")
+        print("0. Regresar")
+        
+        opcion = input("Selecciona una opción: ")
+        
+        if opcion == "1":
+            show2DImages()
+        elif opcion == "2":
+            show3DImages()
+        elif opcion == "0":
+            break
+        else:
+            print("Opción no válida. Por favor, selecciona una opción válida.")
+
+def chainCodes():
+    matrix_chainCodes2D = [[],[],[],[],[]]
+    for i in range(len(images)):
+        matrix_chainCodes2D[0].append(F8_2D(images[i]))
+        matrix_chainCodes2D[1].append(F4_2D(images[i]))
+
+    for i in range(len(images)):
+        matrix_chainCodes2D[2].append(AF8_2D(matrix_chainCodes2D[0][i]))
+        matrix_chainCodes2D[3].append(OT3_2D(matrix_chainCodes2D[1][i]))
+    
+    for i in range(len(images)):
+        matrix_chainCodes2D[4].append(VCC_2D(matrix_chainCodes2D[3][i]))
+
+    return matrix_chainCodes2D
+
+def guardar():
+    print('Guardar!')
+
+def graficar_2d():
+    print("\nHas seleccionado graficar 2d")
+
+def graficar_3d():
+    print("\nHas seleccionado graficar 3d")
+
+
 
 def F8_2D(image):
     F8 = ''
@@ -203,6 +318,9 @@ def F8_2D(image):
 
     return F8
 
+def F8_3D():
+    return
+
 def F4_2D(image):
     F4 = ''
     i, j = 0, 0
@@ -237,6 +355,7 @@ def F4_2D(image):
         #print(izq)
         #print('i',i,'j',j)
         if(izq):
+
             for m in range(-1,2):
                 if(i-1==k and j+m==l):
                     continue
@@ -366,6 +485,9 @@ def F4_2D(image):
         
     return F4
 
+def F4_3D():
+    return
+
 def AF8_2D(F8):
     Af8 = []
     for i in range(0,len(F8)):
@@ -375,6 +497,9 @@ def AF8_2D(F8):
             Af8.append((int(F8[i]) + 8) - (int(F8[i-1])))    
     AF8="".join(map(str, Af8))
     return AF8
+
+def AF8_3D():
+    return
 
 def OT3_2D(F4):
     referencia= 3
@@ -415,6 +540,9 @@ def OT3_2D(F4):
     OT3 = "".join(map(str, ot3))
     return OT3
 
+def OT3_3D():
+    return
+
 def VCC_2D(OT3):
     VCC=""
     bo='1'
@@ -427,44 +555,66 @@ def VCC_2D(OT3):
         if OT3[i]=='2':VCC+= bo
     return VCC
 
-def chainCodes():
-    chainCodeNames = ['F8', 'F4', 'AF8', '3OT', 'VCC']
-    matrix_chainCodes2D = [[],[],[],[],[]]
-    for i in range(len(images)):
-        matrix_chainCodes2D[0].append(F8_2D(images[i]))
-        matrix_chainCodes2D[1].append(F4_2D(images[i]))
+def VCC_3D():
+    return
 
-    for i in range(len(images)):
-        matrix_chainCodes2D[2].append(AF8_2D(matrix_chainCodes2D[0][i]))
-        matrix_chainCodes2D[3].append(OT3_2D(matrix_chainCodes2D[1][i]))
-    
-    for i in range(len(images)):
-        matrix_chainCodes2D[4].append(VCC_2D(matrix_chainCodes2D[3][i]))
 
-    i = 0
-    for chainCode in matrix_chainCodes2D:
-        print('\n--',chainCodeNames[i],'--')
-        for j in range(len(chainCode)):
-            print(names[j],': ',chainCode[j])
-        i += 1
+def show2DImages():
+    fig,axs = plt.subplots(1,5,figsize=(10,5))
+    # Mostrar cada imagen en un subplot
+    axs[0].imshow(images[0], cmap='gray')
+    axs[0].axis('off')
+    axs[0].set_title(names[0])
 
-def showImages():
-    fig,axs = plt.subplots(2,5,figsize=(6,4))
-    for i,img in enumerate(images):
-        row = i//5
-        col = i%5
-        axs[row,col].imshow(img,cmap = "Greys_r")
-        axs[row,col].axis("off")
+    axs[1].imshow(images[1], cmap='gray')
+    axs[1].axis('off')
+    axs[1].set_title(names[1])
+
+    axs[2].imshow(images[2], cmap='gray')
+    axs[2].axis('off')
+    axs[2].set_title(names[2])
+
+    axs[3].imshow(images[3], cmap='gray')
+    axs[3].axis('off')
+    axs[3].set_title(names[3])
+
+    axs[4].imshow(images[4], cmap='gray')
+    axs[4].axis('off')
+    axs[4].set_title(names[4])
+
+    # Ajustar los espacios entre subplots
+    plt.tight_layout()
     plt.show()
 
+def show3DImages():
+    plotter = pv.Plotter(shape=(1, 5),window_size=[800,300], )
 
-def accion3():
-    print('Has elegido la opción 3')
+    malla = []
+    for img in models_3d:
+        malla.append(pv.read('images/'+img+'.ply'))
 
+    plotter.subplot(0, 0)
+    plotter.add_text(models_3d[0], font_size=15)
+    plotter.add_mesh(malla[0])
 
-def salir():
-    print('Saliendo')
+    plotter.subplot(0, 1)
+    plotter.add_text(models_3d[1], font_size=15)
+    plotter.add_mesh(malla[1])
 
+    plotter.subplot(0, 2)
+    plotter.add_text(models_3d[2], font_size=15)
+    plotter.add_mesh(malla[2])
+
+    plotter.subplot(0, 3)
+    plotter.add_text(models_3d[3], font_size=15)
+    plotter.add_mesh(malla[3])
+
+    plotter.subplot(0, 4)
+    plotter.add_text(models_3d[4], font_size=15)
+    plotter.add_mesh(malla[4])
+
+    # Display the window
+    plotter.show()
 
 if __name__ == '__main__':
     for name in names:
