@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import pyvista as pv
+from PIL import Image
+from skimage import measure
 
 names = ['cup-1', 'device8-1', 'flatfish-1', 'jar-1', 'personal_car-1']
 images = []
@@ -47,6 +49,10 @@ def sub_menu1():
             sub_menu1_1(codes)
         elif opcion == "2":
             sub_menu1_2()
+        elif opcion == "3":
+            sub_menu1_3()
+        elif opcion == "4":
+            sub_menu1_4()
         elif opcion == "0":
             break
         else:
@@ -112,6 +118,55 @@ def sub_menu1_2():
         else:
             print("Opción no válida. Por favor, selecciona una opción válida.")
 
+def sub_menu1_3():
+    while True:
+        print("\n=== Nube de puntos ===")
+        print("1. 2D")
+        print("2. 3D")
+        print("0. Regresar")
+        
+        opcion = input("Selecciona una opción: ")
+        
+        if opcion == "1":
+            nubes_2d()
+        elif opcion == "2":
+            nubes_3d()
+        elif opcion == "0":
+            break
+        else:
+            print("Opción no válida. Por favor, selecciona una opción válida.")
+
+def sub_menu1_4():
+    while True:
+        print("\n=== Nube de puntos ===")
+        print("1. Característica de Euler")
+        print("2. Número de hoyos o túneles")
+        print("3. Número de 1-pixeles/1-voxeles")
+        print("4. Número de tetra-pixeles")
+        print("5. Número de vertices")
+        print("6. Número de aristas")
+        print("0. Regresar")
+        
+        opcion = input("Selecciona una opción: ")
+        
+        if opcion == "1":
+            caract_euler()
+        elif opcion == "2":
+            num_hoyos()
+        elif opcion == "3":
+            num_1pixeles()
+            num_1voxeles()
+        elif opcion == "4":
+            num_tetra()
+        elif opcion == "5":
+            num_vertices_aristas()
+        elif opcion == "6":
+            num_vertices_aristas()
+        elif opcion == "0":
+            break
+        else:
+            print("Opción no válida. Por favor, selecciona una opción válida.")
+
 def sub_menu2():
     while True:
         print("\n=== Abrir imágenes ===")
@@ -145,6 +200,136 @@ def chainCodes():
 
     return matrix_chainCodes2D
 
+def caract_euler():
+    for name in names:
+        # Cargar la imagen en escala de grises
+        image = cv2.imread('images/'+name+'-original.png', 0)
+
+        # Aplicar la característica de Euler a la imagen
+        result_image = euler_image(image, iterations=10, step_size=0.1)
+
+        # Mostrar la imagen original y la imagen resultante
+        cv2.imshow('Original Image', image)
+        cv2.imshow('Result Image', result_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    
+def euler_image(image, iterations, step_size):
+    """
+    Aplica la característica de Euler a una imagen 2D.
+
+    Args:
+        image: Matriz NumPy que representa la imagen 2D (escala de grises)
+        iterations: Número de iteraciones a realizar
+        step_size: Tamaño del paso para la aproximación de las derivadas parciales
+
+    Returns:
+        La imagen resultante después de aplicar la característica de Euler
+    """
+    result = image.copy().astype(np.float32)
+    h, w = image.shape
+
+    for _ in range(iterations):
+        dx, dy = np.gradient(result)
+        result += step_size * (np.abs(dx) + np.abs(dy))
+
+    # Escalar los valores resultantes a [0, 255] y convertir a tipo uint8
+    result = ((result - np.min(result)) / np.ptp(result) * 255).astype(np.uint8)
+
+    return result
+
+def num_hoyos():
+    return
+
+def num_1pixeles():
+    print()
+    for name in names:
+        # Cargar la imagen en escala de grises
+        image = cv2.imread('images/' + name + '.png', 0)
+
+        # Aplicar umbralización para convertir la imagen en binaria
+        _, binary_image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+
+        # Encontrar los píxeles con valor 1
+        white_pixels = np.where(binary_image == 255)
+
+        # Obtener las coordenadas de los píxeles con valor 1
+        white_pixels_coordinates = list(zip(white_pixels[1], white_pixels[0]))
+
+        # Imprimir la cantidad de píxeles con valor 1 y sus coordenadas
+        print(f"{name} - Cantidad de 1-píxeles: {len(white_pixels_coordinates)}")
+
+
+def num_1voxeles():
+    return
+
+def num_tetra():
+    for name in names:
+        imagen = Image.open('images/' + name + '.png')
+        ancho, alto = imagen.size
+
+        contador_tetrapixeles = 1 if ancho == alto else 0 
+
+        for x in range(0, ancho - 1, 2):
+            for y in range(0, alto - 1, 2):
+                pixel1 = imagen.getpixel((x, y))
+                pixel2 = imagen.getpixel((x + 1, y))
+                pixel3 = imagen.getpixel((x, y + 1))
+                pixel4 = imagen.getpixel((x + 1, y + 1))
+                
+                if pixel1 == pixel2 == pixel3 == pixel4:
+                    contador_tetrapixeles += 1
+        
+        print(contador_tetrapixeles)
+
+
+def num_vertices_aristas():
+    print()
+    for name in names:
+        
+        # Cargar la imagen en escala de grises
+        imagen = cv2.imread('images/' + name + '.png', cv2.IMREAD_GRAYSCALE)
+
+        # Aplicar el operador Canny para detectar las aristas
+        bordes = cv2.Canny(imagen, 100, 200)
+
+        # Encontrar los contornos de los objetos
+        contornos, _ = cv2.findContours(bordes, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Contar el número de vértices
+        contador_vertices = 0
+        for contorno in contornos:
+            epsilon = 0.02 * cv2.arcLength(contorno, True)
+            aproximacion = cv2.approxPolyDP(contorno, epsilon, True)
+            contador_vertices += len(aproximacion)
+
+        print(name,'-',contador_vertices)
+    
+
+    ruta_imagen = "pear.tiff"
+    imagen = Image.open(ruta_imagen)
+
+    # Convertir la imagen a escala de grises si es necesario
+    if imagen.mode != "L":
+        imagen = imagen.convert("L")
+
+    aristas, vertices = calcular_aristas_vertices(np.array(imagen))
+
+    print("Número de aristas:", aristas)
+    print("Número de vértices:", vertices)
+
+def calcular_aristas_vertices(imagen_3d):
+    # Obtener los contornos de la imagen binaria 3D
+    contornos = measure.find_contours(imagen_3d, 0.5)
+
+    # Contar el número de aristas
+    contador_aristas = len(contornos)
+
+    # Contar el número de vértices
+    contador_vertices = sum([len(contorno) for contorno in contornos])
+
+    return contador_aristas, contador_vertices
+        
 def guardar():
     print('Guardar!')
 
@@ -154,7 +339,47 @@ def graficar_2d():
 def graficar_3d():
     print("\nHas seleccionado graficar 3d")
 
+def nubes_2d():
+    for name in names:
+        # Lee la imagen en color
+        image = cv2.imread('images/' + name + '-original.png')
 
+        # Convierte la imagen a escala de grises
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Aplica una umbralización a la imagen
+        _, binary_image = cv2.threshold(gray_image, 127, 255, cv2.THRESH_BINARY)
+
+        # Encuentra los contornos en la imagen binaria
+        contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Encuentra los puntos de quiebre en los contornos
+        break_points = []
+        for contour in contours:
+            approx_curve = cv2.approxPolyDP(contour, 0.01 * cv2.arcLength(contour, True), True)
+            if len(approx_curve) > 4:  # Puedes ajustar este umbral según tus necesidades
+                break_points.extend(approx_curve)
+
+        # Dibuja los puntos de quiebre en una imagen en blanco
+        result_image = np.zeros_like(image)
+        for point in break_points:
+            cv2.circle(image, tuple(point[0]), 5, (0, 255, 0), -1)
+
+        print(break_points)
+        # Calcula el Error Cuadrático Integral (ISE)
+        ise = np.sum((image.astype("float") - result_image.astype("float")) ** 2)
+
+        # Muestra el ISE
+        print("ISE:", ise)
+
+        # Muestra la imagen con los puntos de quiebre
+        cv2.imshow('Break Points', image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
+def nubes_3d():
+    return
 
 def F8_2D(image):
     F8 = ''
