@@ -5,6 +5,8 @@ import numpy as np
 import pyvista as pv
 from PIL import Image
 from skimage import measure
+from plyfile import PlyData
+import ezdxf
 
 names = ['cup-1', 'device8-1', 'flatfish-1', 'jar-1', 'personal_car-1']
 images = []
@@ -48,7 +50,8 @@ def sub_menu1():
             codes = chainCodes()
             sub_menu1_1(codes)
         elif opcion == "2":
-            sub_menu1_2()
+            codes = chainCodes()
+            sub_menu1_2(codes)
         elif opcion == "3":
             sub_menu1_3()
         elif opcion == "4":
@@ -100,7 +103,7 @@ def sub_menu1_1(codes):
         else:
             print("Opción no válida. Por favor, selecciona una opción válida.")
 
-def sub_menu1_2():
+def sub_menu1_2(codes):
     while True:
         print("\n=== Graficar cadenas ===")
         print("1. 2D")
@@ -110,9 +113,10 @@ def sub_menu1_2():
         opcion = input("Selecciona una opción: ")
         
         if opcion == "1":
-            graficar_2d()
+            graficar_2d(codes)
         elif opcion == "2":
-            graficar_3d()
+            for name in models_3d:
+                graficar_3d('images/' + name + '.ply', 'saves/' + name + '.dxf')
         elif opcion == "0":
             break
         else:
@@ -138,7 +142,7 @@ def sub_menu1_3():
 
 def sub_menu1_4():
     while True:
-        print("\n=== Nube de puntos ===")
+        print("\n=== Euler ===")
         print("1. Característica de Euler")
         print("2. Número de hoyos o túneles")
         print("3. Número de 1-pixeles/1-voxeles")
@@ -306,7 +310,7 @@ def num_vertices_aristas():
         print(name,'-',contador_vertices)
     
 
-    ruta_imagen = "pear.tiff"
+    ruta_imagen = "tiff/pear.tiff"
     imagen = Image.open(ruta_imagen)
 
     # Convertir la imagen a escala de grises si es necesario
@@ -333,11 +337,70 @@ def calcular_aristas_vertices(imagen_3d):
 def guardar():
     print('Guardar!')
 
-def graficar_2d():
-    print("\nHas seleccionado graficar 2d")
+def graficar_2d(matrix_chainCodes2D):
+    fig, axs = plt.subplots(len(matrix_chainCodes2D), sharex=True, figsize=(8, 6))
 
-def graficar_3d():
-    print("\nHas seleccionado graficar 3d")
+    for i, cadena in enumerate(matrix_chainCodes2D):
+        axs[i].plot(cadena, marker='o')
+        axs[i].set_ylabel(f'Cadena {i+1}')
+        axs[i].grid(True)
+
+    axs[-1].set_xlabel('Índice')
+
+    plt.tight_layout()
+    plt.show()
+
+def graficar_3d(mesh_path,output_path):
+        # Cargar el archivo PLY como un objeto PolyData
+    mesh = pv.read(mesh_path)
+
+    # Obtener las coordenadas de los vértices
+    vertices = mesh.points[:, :2]
+
+    # Crear una figura y un eje
+    fig, ax = plt.subplots()
+
+    # Graficar los vértices de la malla
+    ax.scatter(vertices[:, 0], vertices[:, 1], color='black', s=1)
+
+    # Obtener las aristas de la malla
+    edges = mesh.lines
+
+    # Graficar las aristas de la malla como segmentos de recta
+    for edge in edges:
+        start = vertices[edge[0]]
+        end = vertices[edge[1]]
+        ax.plot([start[0], end[0]], [start[1], end[1]], color='red', linewidth=0.5)
+
+    # Configurar los límites del eje
+    if not np.isnan(vertices[:, 0]).any() and not np.isnan(vertices[:, 1]).any():
+        ax.set_xlim(vertices[:, 0].min(), vertices[:, 0].max())
+        ax.set_ylim(vertices[:, 1].min(), vertices[:, 1].max())
+
+    # Configurar el aspecto de los ejes para que sean iguales
+    ax.set_aspect('equal')
+
+    # Guardar la figura en un archivo vectorial
+    # plt.savefig(output_path, format='svg')
+
+    # Guardar los puntos y las líneas en un archivo DXF
+    doc = ezdxf.new("R2010")
+    msp = doc.modelspace()
+
+    # Agregar los puntos al archivo DXF
+    for point in vertices:
+        msp.add_point(point, dxfattribs={'layer': 'Points'})
+
+    # Agregar las líneas al archivo DXF
+    for edge in edges:
+        start = vertices[edge[0]]
+        end = vertices[edge[1]]
+        msp.add_line(start, end, dxfattribs={'layer': 'Lines'})
+
+    doc.saveas(output_path[:-4] + '.dxf')
+
+    # Mostrar la imagen con las cadenas graficadas
+    plt.show()
 
 def nubes_2d():
     for name in names:
@@ -365,7 +428,7 @@ def nubes_2d():
         for point in break_points:
             cv2.circle(image, tuple(point[0]), 5, (0, 255, 0), -1)
 
-        print(break_points)
+        # print(break_points)
         # Calcula el Error Cuadrático Integral (ISE)
         ise = np.sum((image.astype("float") - result_image.astype("float")) ** 2)
 
@@ -379,7 +442,35 @@ def nubes_2d():
 
 
 def nubes_3d():
-    return
+    nube_puntos_3D = []
+    
+    for name in models_3d:
+        nube_puntos_3D = []
+        plydata = PlyData.read('images/'+name+'.ply')
+        vertices = plydata['vertex'].data[['x', 'y', 'z']]
+        
+        nube_puntos_3D.append(vertices)
+                
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        for puntos in nube_puntos_3D:
+            ax.scatter(puntos['x'], puntos['y'], puntos['z'], s=1)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        plt.show()
+
+        doc = ezdxf.new("R2010")  # Crea un nuevo documento DWG en formato R2010
+
+        msp = doc.modelspace()  # Obtiene el espacio de modelos
+
+        for punto in vertices:
+            msp.add_point(punto, dxfattribs={'layer': 'Points'})  # Agrega un punto en el espacio de modelos
+
+        doc.saveas('saves/' + name + '.dwg')  # Guarda el archivo DWG
+
+        print(f"Archivo DWG {name}.dwg exportado en carpeta saves.")
+
 
 def F8_2D(image):
     F8 = ''
